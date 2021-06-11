@@ -1,4 +1,5 @@
 import math
+import parts
 
 def matrix3x3(M1, M2):
     '''3x3 Matrix multiplication'''
@@ -28,30 +29,36 @@ def frameMatrix(angle, frame):
 
 class figure:
     '''Creating object to handle calculations'''
-    rotZ = []           # Dont know if I need it, but I let it live
-    frames = []         # Coordinates frames according to Denavit–Hartenberg, I hope I will use at least this one
-    displacement = []   # Probably will be useful when spacing between servo will be used. Update useless variable
+    rotZ = []                           # Dont know if I need it, but I let it live
+    frames = []                         # Coordinates frames according to Denavit–Hartenberg, I hope I will use at least this one
+    displacement = [4, 7.3, 4, 4.8]     # List of spacing between joints
 
-    def __init__(self, lista, distance = 7.3):
+    endEffector = parts.end()
+
+    def __init__(self, lista):
         '''Initialize joints, rays and create coordinates frames'''
         self.lista = lista
-        self.distance = distance
 
-    def shift(self, angle):
+    # Forward kinematics
+    def shift(self, angle, index):
         '''Calculate the shift from rotation'''
         rad = math.radians(angle)
-        return (self.distance*math.sin(rad), self.distance*math.cos(rad), 0)
+        return (self.displacement[index]*math.sin(rad), self.displacement[index]*math.cos(rad), 0)
 
     def displacement(self):
         '''Calculate displacement and direction''' 
-        first = lista[0]
         for index in len(self.lista)-1:
-            second = first
-            first = lista[index+1]
+            lista[index+1].copyPos(dispMatrix(self.lista[index], self.shift(lista[index].angle, index)))        # Calculate position
+            lista[index+1].direction = frameMatrix(lista[index].angle, lista[index+1].direction)                # Calculate coordinate frame
 
-        second.x, second.y, second.z = dispMatrix(first.direction, self.shift(first.angle))         # Calculate position
-        second.direction = frameMatrix(first.angle, second.direction)                               # Calculate coordinate frame
+    def endFrame(self):
+        '''Copy frame to end effector'''
+        index = len(self.lista)
+        self.endEffector.copyPos(dispMatrix(self.lista[index], self.shift(lista[index].angle, index)))          # Calculate position of end effector
+        self.endEffector.direction = self.lista[index].direction                                                # Copy coordinate frame
 
-            
-            
-    
+    # Inverse kinematic
+    def setEnd(self, pos):
+        '''Set position of end effector'''
+        self.endEffector.copyPos(pos)
+        
